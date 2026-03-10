@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Adoption 3D - Each Dot is ~3.2 Million People</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    color: #e8e4df;
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #canvas-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 40px;
+  }
+
+  .title-block {
+    max-width: 600px;
+  }
+
+  .title-block h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(28px, 4vw, 52px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #f5f2ed;
+    margin-bottom: 10px;
+  }
+
+  .title-block .subtitle {
+    font-size: clamp(12px, 1.4vw, 16px);
+    color: #8a857e;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 36px;
+    padding: 20px 28px;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    align-self: flex-start;
+    pointer-events: auto;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+  }
+
+  .legend-item:hover { opacity: 0.7; }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .legend-label {
+    font-size: 13px;
+    color: #c4bfb8;
+  }
+
+  .legend-label strong {
+    color: #f5f2ed;
+    font-weight: 700;
+  }
+
+  .legend-label .pct {
+    color: #6b6660;
+    font-size: 12px;
+  }
+
+  .controls {
+    position: fixed;
+    bottom: 32px;
+    right: 40px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .controls button {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #c4bfb8;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+  }
+
+  .controls button:hover {
+    background: rgba(255,255,255,0.14);
+    color: #f5f2ed;
+  }
+
+  .controls button.active {
+    background: rgba(255,255,255,0.18);
+    color: #f5f2ed;
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  .stat-callout {
+    position: fixed;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    z-index: 15;
+    text-align: right;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  .stat-callout.visible { opacity: 1; }
+
+  .stat-callout .big-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(40px, 6vw, 80px);
+    color: #f5f2ed;
+    line-height: 1;
+  }
+
+  .stat-callout .big-label {
+    font-size: 14px;
+    color: #8a857e;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="overlay">
+  <div class="title-block">
+    <h1>Each dot is ~3.2 million people</h1>
+    <div class="subtitle">2,500 dots = 8.1 billion humans. Color = most advanced AI interaction, Feb 2026.</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item" data-category="gray">
+      <div class="legend-dot" style="background: #c4bfb4;"></div>
+      <div class="legend-label"><strong>~6.8B</strong> Never used AI <span class="pct">(84%)</span></div>
+    </div>
+    <div class="legend-item" data-category="green">
+      <div class="legend-dot" style="background: #5aaa6e;"></div>
+      <div class="legend-label"><strong>~1.3B</strong> Free chatbot user <span class="pct">(16%)</span></div>
+    </div>
+    <div class="legend-item" data-category="gold">
+      <div class="legend-dot" style="background: #d4a832;"></div>
+      <div class="legend-label"><strong>~15-25M</strong> Pays $20/mo <span class="pct">(~0.3%)</span></div>
+    </div>
+    <div class="legend-item" data-category="red">
+      <div class="legend-dot" style="background: #c0392b;"></div>
+      <div class="legend-label"><strong>~2-5M</strong> Uses coding scaffold <span class="pct">(~0.04%)</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="stat-callout" id="stat-callout">
+  <div class="big-num" id="stat-num">84%</div>
+  <div class="big-label" id="stat-label">have never used AI</div>
+</div>
+
+<div class="controls">
+  <button id="btn-orbit" class="active">Auto Orbit</button>
+  <button id="btn-top">Top View</button>
+  <button id="btn-side">Side View</button>
+  <button id="btn-zoom">Zoom to Paid</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  // --- Config ---
+  const COLS = 50;
+  const ROWS = 50;
+  const TOTAL = COLS * ROWS; // 2500
+  const SPACING = 1.2;
+  const CUBE_SIZE = 0.45;
+
+  // Category counts
+  const NUM_RED = 1;       // ~0.04%
+  const NUM_GOLD = 7;      // ~0.3%
+  const NUM_GREEN = 400;   // 16%
+  const NUM_GRAY = TOTAL - NUM_GREEN - NUM_GOLD - NUM_RED; // 2092 = 84%
+
+  // Colors
+  const COL_GRAY  = new THREE.Color(0xc4bfb4);
+  const COL_GREEN = new THREE.Color(0x5aaa6e);
+  const COL_GOLD  = new THREE.Color(0xd4a832);
+  const COL_RED   = new THREE.Color(0xc0392b);
+
+  // Heights for 3D effect
+  const H_GRAY  = 0.5;
+  const H_GREEN = 2.0;
+  const H_GOLD  = 5.0;
+  const H_RED   = 8.0;
+
+  // --- Scene setup ---
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a0a);
+  scene.fog = new THREE.FogExp2(0x0a0a0a, 0.008);
+
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(45, 55, 65);
+  camera.lookAt(COLS * SPACING / 2, 0, ROWS * SPACING / 2);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+
+  // --- Lights ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.8);
+  dirLight.position.set(40, 60, 30);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.camera.near = 1;
+  dirLight.shadow.camera.far = 200;
+  dirLight.shadow.camera.left = -80;
+  dirLight.shadow.camera.right = 80;
+  dirLight.shadow.camera.top = 80;
+  dirLight.shadow.camera.bottom = -80;
+  scene.add(dirLight);
+
+  const rimLight = new THREE.DirectionalLight(0x8ec5fc, 0.3);
+  rimLight.position.set(-30, 20, -40);
+  scene.add(rimLight);
+
+  // --- Ground plane ---
+  const groundGeo = new THREE.PlaneGeometry(200, 200);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.95 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.01;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // --- Build the grid using InstancedMesh for perf ---
+  // Assign categories: fill from bottom-right corner
+  // Index 0 = top-left, index 2499 = bottom-right
+  const categories = new Array(TOTAL).fill('gray');
+
+  // Fill from the end (bottom-right)
+  let idx = TOTAL - 1;
+  for (let i = 0; i < NUM_RED && idx >= 0; i++, idx--) categories[idx] = 'red';
+  for (let i = 0; i < NUM_GOLD && idx >= 0; i++, idx--) categories[idx] = 'gold';
+  for (let i = 0; i < NUM_GREEN && idx >= 0; i++, idx--) categories[idx] = 'green';
+
+  function getColor(cat) {
+    if (cat === 'green') return COL_GREEN;
+    if (cat === 'gold') return COL_GOLD;
+    if (cat === 'red') return COL_RED;
+    return COL_GRAY;
+  }
+
+  function getHeight(cat) {
+    if (cat === 'green') return H_GREEN;
+    if (cat === 'gold') return H_GOLD;
+    if (cat === 'red') return H_RED;
+    return H_GRAY;
+  }
+
+  // Create instanced mesh
+  const boxGeo = new THREE.BoxGeometry(CUBE_SIZE, 1, CUBE_SIZE);
+  // Move geometry pivot to bottom
+  boxGeo.translate(0, 0.5, 0);
+
+  const material = new THREE.MeshStandardMaterial({
+    roughness: 0.55,
+    metalness: 0.1,
+  });
+
+  const mesh = new THREE.InstancedMesh(boxGeo, material, TOTAL);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  const dummy = new THREE.Object3D();
+  const colorAttr = new Float32Array(TOTAL * 3);
+  const targetHeights = new Float32Array(TOTAL);
+  const currentHeights = new Float32Array(TOTAL);
+
+  const centerX = (COLS - 1) * SPACING / 2;
+  const centerZ = (ROWS - 1) * SPACING / 2;
+
+  for (let i = 0; i < TOTAL; i++) {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    const cat = categories[i];
+    const h = getHeight(cat);
+    const color = getColor(cat);
+
+    targetHeights[i] = h;
+    currentHeights[i] = 0.01; // start tiny for animation
+
+    dummy.position.set(col * SPACING - centerX, 0, row * SPACING - centerZ);
+    dummy.scale.set(1, 0.01, 1);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+
+    colorAttr[i * 3] = color.r;
+    colorAttr[i * 3 + 1] = color.g;
+    colorAttr[i * 3 + 2] = color.b;
+  }
+
+  mesh.instanceColor = new THREE.InstancedBufferAttribute(colorAttr, 3);
+  scene.add(mesh);
+
+  // --- Animation state ---
+  let animStartTime = null;
+  const ANIM_DURATION = 3.0; // seconds for full grow
+  const STAGGER = 1.5; // total stagger across grid
+
+  let autoOrbit = true;
+  let targetCamPos = null;
+  let targetLookAt = new THREE.Vector3(0, 2, 0);
+  let camTransitionSpeed = 0.02;
+
+  // --- Camera views ---
+  const views = {
+    orbit: null, // handled in animation loop
+    top: { pos: new THREE.Vector3(0, 80, 0.1), lookAt: new THREE.Vector3(0, 0, 0) },
+    side: { pos: new THREE.Vector3(0, 8, 55), lookAt: new THREE.Vector3(0, 3, 0) },
+    zoom: { pos: new THREE.Vector3(24, 6, 26), lookAt: new THREE.Vector3(28, 3, 28) },
+  };
+
+  // --- Controls ---
+  document.getElementById('btn-orbit').addEventListener('click', () => {
+    autoOrbit = true;
+    targetCamPos = null;
+    setActiveBtn('btn-orbit');
+    hideCallout();
+  });
+
+  document.getElementById('btn-top').addEventListener('click', () => {
+    autoOrbit = false;
+    targetCamPos = views.top.pos.clone();
+    targetLookAt = views.top.lookAt.clone();
+    setActiveBtn('btn-top');
+    showCallout('84%', 'have never used AI');
+  });
+
+  document.getElementById('btn-side').addEventListener('click', () => {
+    autoOrbit = false;
+    targetCamPos = views.side.pos.clone();
+    targetLookAt = views.side.lookAt.clone();
+    setActiveBtn('btn-side');
+    showCallout('0.04%', 'use coding scaffolds');
+  });
+
+  document.getElementById('btn-zoom').addEventListener('click', () => {
+    autoOrbit = false;
+    targetCamPos = views.zoom.pos.clone();
+    targetLookAt = views.zoom.lookAt.clone();
+    setActiveBtn('btn-zoom');
+    showCallout('~8', 'dots pay for AI out of 2,500');
+  });
+
+  function setActiveBtn(id) {
+    document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showCallout(num, label) {
+    document.getElementById('stat-num').textContent = num;
+    document.getElementById('stat-label').textContent = label;
+    document.getElementById('stat-callout').classList.add('visible');
+  }
+
+  function hideCallout() {
+    document.getElementById('stat-callout').classList.remove('visible');
+  }
+
+  // --- Mouse interaction for manual orbit ---
+  let mouseDown = false;
+  let mouseX = 0, mouseY = 0;
+  let orbitAngle = 0.3;
+  let orbitPitch = 0.6;
+  let orbitDist = 60;
+
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    mouseDown = true;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  renderer.domElement.addEventListener('mousemove', (e) => {
+    if (!mouseDown) return;
+    const dx = e.clientX - mouseX;
+    const dy = e.clientY - mouseY;
+    orbitAngle -= dx * 0.005;
+    orbitPitch = Math.max(0.1, Math.min(1.4, orbitPitch - dy * 0.005));
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    autoOrbit = false;
+    targetCamPos = null;
+    setActiveBtn('');
+    hideCallout();
+  });
+
+  renderer.domElement.addEventListener('mouseup', () => { mouseDown = false; });
+
+  renderer.domElement.addEventListener('wheel', (e) => {
+    orbitDist = Math.max(20, Math.min(120, orbitDist + e.deltaY * 0.05));
+  });
+
+  // Touch support
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      mouseDown = true;
+      mouseX = e.touches[0].clientX;
+      mouseY = e.touches[0].clientY;
+    }
+  });
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    if (!mouseDown || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - mouseX;
+    const dy = e.touches[0].clientY - mouseY;
+    orbitAngle -= dx * 0.005;
+    orbitPitch = Math.max(0.1, Math.min(1.4, orbitPitch - dy * 0.005));
+    mouseX = e.touches[0].clientX;
+    mouseY = e.touches[0].clientY;
+    autoOrbit = false;
+    targetCamPos = null;
+  });
+  renderer.domElement.addEventListener('touchend', () => { mouseDown = false; });
+
+  // --- Easing ---
+  function easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  // --- Animation loop ---
+  const clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const elapsed = clock.getElapsedTime();
+    if (animStartTime === null) animStartTime = elapsed;
+    const animElapsed = elapsed - animStartTime;
+
+    // Update bar heights with staggered animation
+    let needsUpdate = false;
+    for (let i = 0; i < TOTAL; i++) {
+      const row = Math.floor(i / COLS);
+      const col = i % COLS;
+
+      // Stagger: bottom-right grows first (to reveal categories dramatically)
+      const distFromEnd = ((ROWS - 1 - row) + (COLS - 1 - col)) / (ROWS + COLS - 2);
+      const delay = distFromEnd * STAGGER;
+      const t = Math.max(0, Math.min(1, (animElapsed - delay) / ANIM_DURATION));
+      const eased = easeOutExpo(t);
+
+      const newH = 0.01 + eased * (targetHeights[i] - 0.01);
+
+      if (Math.abs(newH - currentHeights[i]) > 0.001) {
+        currentHeights[i] = newH;
+        needsUpdate = true;
+
+        dummy.position.set(
+          col * SPACING - centerX,
+          0,
+          row * SPACING - centerZ
+        );
+        dummy.scale.set(1, newH, 1);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+    }
+
+    if (needsUpdate) {
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // Camera
+    if (autoOrbit) {
+      orbitAngle += 0.002;
+      const x = Math.sin(orbitAngle) * orbitDist;
+      const z = Math.cos(orbitAngle) * orbitDist;
+      const y = Math.sin(orbitPitch) * orbitDist * 0.7;
+      camera.position.lerp(new THREE.Vector3(x, y, z), 0.03);
+      camera.lookAt(0, 2, 0);
+    } else if (targetCamPos) {
+      camera.position.lerp(targetCamPos, camTransitionSpeed);
+      const currentLookAt = new THREE.Vector3();
+      camera.getWorldDirection(currentLookAt);
+      camera.lookAt(targetLookAt);
+    } else {
+      // Manual orbit from mouse drag
+      const x = Math.sin(orbitAngle) * orbitDist;
+      const z = Math.cos(orbitAngle) * orbitDist;
+      const y = Math.sin(orbitPitch) * orbitDist * 0.7;
+      camera.position.set(x, y, z);
+      camera.lookAt(0, 2, 0);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // --- Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // --- Legend hover highlights ---
+  document.querySelectorAll('.legend-item').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      const cat = item.dataset.category;
+      for (let i = 0; i < TOTAL; i++) {
+        const thisCat = categories[i];
+        const color = getColor(thisCat);
+        if (thisCat !== cat) {
+          colorAttr[i * 3] = color.r * 0.2;
+          colorAttr[i * 3 + 1] = color.g * 0.2;
+          colorAttr[i * 3 + 2] = color.b * 0.2;
+        } else {
+          // Brighten
+          colorAttr[i * 3] = Math.min(1, color.r * 1.3);
+          colorAttr[i * 3 + 1] = Math.min(1, color.g * 1.3);
+          colorAttr[i * 3 + 2] = Math.min(1, color.b * 1.3);
+        }
+      }
+      mesh.instanceColor.needsUpdate = true;
+    });
+
+    item.addEventListener('mouseleave', () => {
+      for (let i = 0; i < TOTAL; i++) {
+        const color = getColor(categories[i]);
+        colorAttr[i * 3] = color.r;
+        colorAttr[i * 3 + 1] = color.g;
+        colorAttr[i * 3 + 2] = color.b;
+      }
+      mesh.instanceColor.needsUpdate = true;
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
